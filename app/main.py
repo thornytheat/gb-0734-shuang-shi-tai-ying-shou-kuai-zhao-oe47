@@ -14,6 +14,7 @@ from app.modules.m4_aging.handler import router as aging
 from app.modules.m5_backfill.handler import router as backfill
 from app.modules.m6_bridge.handler import router as bridge
 from app.modules.m7_archive.handler import router as archive
+from app.modules.m8_writeoff.handler import router as writeoff
 from app.store import Store
 from app.web import router as web
 
@@ -27,7 +28,7 @@ def create_app(path: Path | None = None):
 
     application = FastAPI(title="双时态应收快照", lifespan=lifespan)
     application.add_exception_handler(Problem, problem_response)
-    for router in (intake, versions, snapshot, aging, backfill, bridge, archive, web):
+    for router in (intake, versions, snapshot, aging, backfill, bridge, archive, writeoff, web):
         application.include_router(router)
     application.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
     return application

@@ -41,6 +41,7 @@
 .info-list dt { color: var(--muted); }
 .info-list dd { word-break: break-word; text-align: right; }
 .upload-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; margin-bottom: 12px; }
+.register-form { display: grid; gap: 9px; }
 .axis-wrap { padding: 10px var(--pad) 15px; }
 .axis { padding: 9px 0 4px; }
 .axis + .axis { border-top: 1px solid var(--line-soft); }

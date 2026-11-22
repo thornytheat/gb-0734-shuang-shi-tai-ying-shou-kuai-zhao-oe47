@@ -14,6 +14,7 @@
 | M5 迟报回补 | 固定期初有效日对比两个知悉截面 | `GET /api/backfill` | `app/modules/m5_backfill/service.py` `app/modules/m5_backfill/changes.py` | `tests/test_backfill.py` |
 | M6 期间桥接 | 勾稽总金额和每桶迁移 | `GET /api/bridge` | `app/modules/m6_bridge/ledger.py` `app/modules/m6_bridge/bucket_flow.py` | `tests/test_bridge.py` |
 | M7 快照归档 | 保存、重算和导出证据 | `POST /api/archive` | `app/modules/m7_archive/service.py` `app/modules/m7_archive/export.py` | `tests/test_archive.py` |
+| M8 核销收回 | 登记核销、回单收回与再次核销并核对客户余额 | `GET/POST /api/writeoff` | `app/modules/m8_writeoff/service.py` `app/modules/m8_writeoff/repository.py` | `tests/test_writeoff.py` |
 
 ## 陷阱登记
 
@@ -37,6 +38,10 @@
 | TRAP-23 | D-V1 与 D-V2 相邻 | 终日重复选中 | 有效区间右开 | `app/modules/m2_versions/book.py` | `tests/test_versions.py::test_adjacent_intervals_exclusive_end` |
 | TRAP-25 | C-OV 与采信版交叠 | 随排序取错发票金额 | 保留早知悉有效版并披露交叠 | `app/modules/m2_versions/rules.py` | `tests/test_versions.py::test_overlap_reject_keeps_prior_version` |
 | TRAP-26 | 测试追加陈旧的 A 修订 | 用旧父版覆盖当前版 | 校验父版可用性 | `app/modules/m2_versions/rules.py` | `tests/test_versions.py::test_stale_parent_cannot_overwrite_new_revision` |
+| TRAP-27 | 同一回单重复报送 | 同一笔回款重复恢复 | 回单号为幂等键，重放返回原凭证 | `app/modules/m8_writeoff/service.py` | `tests/test_writeoff.py::test_recovery_rerun_does_not_restore_twice` |
+| TRAP-28 | 同回单号不同金额 | 静默覆盖原收回 | 内容冲突返回 409 | `app/modules/m8_writeoff/service.py` | `tests/test_writeoff.py::test_recovery_same_receipt_with_different_content_conflicts` |
+| TRAP-29 | 收回时恢复应收 | 已核销发票重回逾期名单被重复催收 | 收回只登记备查簿，截面与账龄不变 | `app/modules/m8_writeoff/service.py` | `tests/test_writeoff.py::test_recovery_never_returns_invoice_to_aging` |
+| TRAP-30 | 收回金额被篡改 | 对账静默通过 | 链上勾稽校验置 DIFFERENCE | `app/modules/m8_writeoff/service.py` | `tests/test_writeoff.py::test_tampered_recovery_breaks_reconciliation` |
 
 ## 对账断言
 

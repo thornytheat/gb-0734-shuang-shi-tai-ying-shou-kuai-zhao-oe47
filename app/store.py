@@ -14,6 +14,30 @@ CREATE TABLE IF NOT EXISTS archives (
   result_digest TEXT NOT NULL, payload BLOB NOT NULL
 );
 CREATE INDEX IF NOT EXISTS archives_time ON archives(generated_at DESC, run_id);
+CREATE TABLE IF NOT EXISTS writeoffs (
+  writeoff_id TEXT PRIMARY KEY, source_id TEXT NOT NULL REFERENCES sources(source_id),
+  invoice_id TEXT NOT NULL, customer_id TEXT NOT NULL,
+  effective TEXT NOT NULL, known TEXT NOT NULL,
+  pre_balance_cents INTEGER NOT NULL, written_cents INTEGER NOT NULL,
+  voucher_ref TEXT NOT NULL, note TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS writeoffs_voucher ON writeoffs(source_id, voucher_ref);
+CREATE INDEX IF NOT EXISTS writeoffs_invoice ON writeoffs(source_id, invoice_id);
+CREATE TABLE IF NOT EXISTS recoveries (
+  recovery_id TEXT PRIMARY KEY,
+  writeoff_id TEXT NOT NULL REFERENCES writeoffs(writeoff_id),
+  source_id TEXT NOT NULL, invoice_id TEXT NOT NULL, customer_id TEXT NOT NULL,
+  receipt_ref TEXT NOT NULL, amount_cents INTEGER NOT NULL,
+  received_on TEXT NOT NULL, note TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS recoveries_receipt ON recoveries(source_id, receipt_ref);
+CREATE TABLE IF NOT EXISTS rewriteoffs (
+  rewriteoff_id TEXT PRIMARY KEY,
+  recovery_id TEXT NOT NULL REFERENCES recoveries(recovery_id),
+  voucher_ref TEXT NOT NULL, amount_cents INTEGER NOT NULL,
+  note TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS rewriteoffs_voucher ON rewriteoffs(recovery_id, voucher_ref);
 """
 
 

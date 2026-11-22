@@ -210,3 +210,65 @@ export function history(runs, selected, pick) {
     ['生成时间', instant(selected.generated_at)], ['规则版本', selected.rule_version], ['耗时 ms', selected.elapsed_ms]]));
   else $('archive-detail').replaceChildren(node('p', '请选择归档批次', 'empty'));
 }
+
+function chainEvidence(row) {
+  const sections = [evidenceSection('核销凭证', [['凭证号', row.voucher_ref],
+    ['发票 / 客户', `${row.invoice_id} / ${row.customer_id}`],
+    ['证据切点', `${row.cut.effective} · ${instant(row.cut.known)}`],
+    ['核销前余额', money(row.pre_balance_cents)], ['核销金额', money(row.written_cents)],
+    ['登记时间', instant(row.created_at)], ['备注', row.note || '—']])];
+  for (const recovery of row.recoveries) {
+    sections.push(evidenceSection('收回凭证', [['银行回单号', recovery.receipt_ref],
+      ['收回金额', money(recovery.amount_cents)], ['收回日期', recovery.received_on],
+      ['再次核销', money(recovery.rewrite_cents)], ['可再核销余额', money(recovery.remaining_cents)],
+      ['登记时间', instant(recovery.created_at)], ['备注', recovery.note || '—']]));
+    for (const item of recovery.rewriteoffs) {
+      sections.push(evidenceSection('再次核销凭证', [['凭证号', item.voucher_ref],
+        ['金额', money(item.amount_cents)], ['登记时间', instant(item.created_at)], ['备注', item.note || '—']]));
+    }
+  }
+  return sections;
+}
+
+function fillOptions(name, options) {
+  const select = $(name).elements.namedItem(name === 'rewrite-form' ? 'recovery_id' : 'invoice_id');
+  const current = select.value;
+  select.replaceChildren(...options.map(({value, label}) => new Option(label, value)));
+  if (options.some((option) => option.value === current)) select.value = current;
+}
+
+export function writeoff(data, snap) {
+  const totals = data.totals;
+  $('writeoff-state').textContent = data.status === 'MATCHED' ? '已对平' : '存在差额';
+  $('writeoff-state').className = data.status === 'MATCHED' ? 'subtle good' : 'subtle warn';
+  $('writeoff-summary').replaceChildren(definitions([['核销前余额', money(totals.pre_balance_cents)],
+    ['已核销金额', money(totals.written_cents)], ['累计收回', money(totals.recovered_cents)],
+    ['再次核销', money(totals.rewrite_cents)], ['收回后余额', money(totals.balance_cents)],
+    ['核销链 / 未结', `${totals.chains} / ${totals.open_chains}`], ['客户数', totals.customers]]));
+  table('writeoff-customers', ['客户', ['核销前余额', 'num'], ['已核销金额', 'num'], ['累计收回', 'num'],
+    ['再次核销', 'num'], ['收回后余额', 'num'], ['核销链', 'num']],
+    data.customers.map((row) => [cell(row.customer_id, 'mono'), cash(row.pre_balance_cents), cash(row.written_cents),
+      cash(row.recovered_cents), cash(row.rewrite_cents), cash(row.balance_cents), number(row.chains)]),
+    '暂无核销登记');
+  table('writeoff-chains', ['发票 / 客户', '核销凭证', ['核销前余额', 'num'], ['已核销', 'num'], ['收回', 'num'],
+    ['再核销', 'num'], ['收回后余额', 'num'], ['截面账面', 'num'], '状态', '凭证'],
+    data.chains.map((row) => [
+      cell(`${row.invoice_id} / ${row.customer_id}`, 'mono'), cell(row.voucher_ref, 'mono'),
+      cash(row.pre_balance_cents), cash(row.written_cents), cash(row.recovered_cents), cash(row.rewrite_cents),
+      cash(row.balance_cents), cash(row.open_ar_cents),
+      row.open ? cell('未结', 'warn') : cell('已结清', 'good'),
+      evidence(row.voucher_ref, () => chainEvidence(row)),
+    ]), '暂无核销登记');
+  const chained = new Set(data.chains.map((row) => row.invoice_id));
+  fillOptions('writeoff-form', snap.invoices
+    .filter((row) => row.balance_cents > 0 && !chained.has(row.invoice_id))
+    .map((row) => ({value: row.invoice_id,
+      label: `${row.invoice_id} / ${row.customer_id} · 余额 ${money(row.balance_cents)}`})));
+  fillOptions('recovery-form', data.chains.filter((row) => row.open)
+    .map((row) => ({value: row.invoice_id,
+      label: `${row.invoice_id} / ${row.customer_id} · 待收 ${money(row.balance_cents)}`})));
+  fillOptions('rewrite-form', data.chains.flatMap((chain) => chain.recoveries
+    .filter((row) => row.remaining_cents > 0)
+    .map((row) => ({value: row.recovery_id,
+      label: `${row.receipt_ref} / ${chain.invoice_id} · 可再核销 ${money(row.remaining_cents)}`}))));
+}

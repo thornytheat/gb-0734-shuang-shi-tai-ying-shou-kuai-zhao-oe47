@@ -25,3 +25,38 @@
   <section class="panel wide-panel"><div class="panel-head"><h2>归档批次</h2><button id="rerun" class="btn" type="button" disabled>重跑归档</button></div><div id="archive-list" class="scroll-table"></div></section>
   <section class="panel"><div class="panel-head"><h2>运行清单</h2></div><div id="archive-detail" class="panel-body"><p class="empty">请选择归档批次</p></div></section>
 </section>
+<section data-page="writeoff" class="grid ledger-grid" hidden>
+  <section class="panel"><div class="panel-head"><h2>核销登记</h2><span class="subtle">凭证留档 · 按期末切点取数</span></div>
+    <div class="panel-body"><form id="writeoff-form" class="register-form">
+      <label class="field">发票<select name="invoice_id" required></select></label>
+      <label class="field">核销凭证号<input name="voucher_ref" autocomplete="off" required></label>
+      <label class="field">核销金额 · 留空为全额<input name="amount" inputmode="decimal" placeholder="0.00" autocomplete="off"></label>
+      <label class="field">备注<input name="note" autocomplete="off"></label>
+      <button class="btn btn-primary" type="submit">登记核销</button>
+    </form></div>
+  </section>
+  <section class="panel"><div class="panel-head"><h2>收回登记</h2><span class="subtle">回单按原发票号勾稽</span></div>
+    <div class="panel-body"><form id="recovery-form" class="register-form">
+      <label class="field">发票<select name="invoice_id" required></select></label>
+      <label class="field">银行回单号<input name="receipt_ref" autocomplete="off" required></label>
+      <label class="field">收回金额<input name="amount" inputmode="decimal" placeholder="0.00" autocomplete="off" required></label>
+      <label class="field">收回日期<input type="date" name="received_on" required></label>
+      <label class="field">备注<input name="note" autocomplete="off"></label>
+      <button class="btn btn-primary" type="submit">登记收回</button>
+    </form></div>
+  </section>
+  <section class="panel"><div class="panel-head"><h2>再次核销</h2><span class="subtle">收回后仍未兑现</span></div>
+    <div class="panel-body"><form id="rewrite-form" class="register-form">
+      <label class="field">收回凭证<select name="recovery_id" required></select></label>
+      <label class="field">再次核销凭证号<input name="voucher_ref" autocomplete="off" required></label>
+      <label class="field">再次核销金额<input name="amount" inputmode="decimal" placeholder="0.00" autocomplete="off" required></label>
+      <label class="field">备注<input name="note" autocomplete="off"></label>
+      <button class="btn btn-primary" type="submit">登记再次核销</button>
+    </form></div>
+  </section>
+  <section class="panel"><div class="panel-head"><h2>对账总览</h2><span id="writeoff-state" class="subtle">—</span></div>
+    <div id="writeoff-summary" class="panel-body"></div>
+  </section>
+  <section class="panel wide-panel"><div class="panel-head"><h2>客户核销对账</h2><span class="subtle">核销前余额 · 已核销 · 收回后余额</span></div><div id="writeoff-customers" class="scroll-table"></div></section>
+  <section class="panel span-all"><div class="panel-head"><h2>核销链明细</h2><span class="subtle">核销 → 收回 → 再次核销，逐笔可追溯</span></div><div id="writeoff-chains" class="scroll-table"></div></section>
+</section>
